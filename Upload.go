@@ -103,6 +103,16 @@ func Upload(filePath string) (ResponseData, error) {
 		io.Copy(part, file)
 	}
 
+	pinataOptions := Options{
+		CidVersion: 1,
+	}
+
+	optionsBytes, err := json.Marshal(pinataOptions)
+	if err != nil {
+		return ResponseData{}, err
+	}
+	_ = writer.WriteField("pinataOptions", string(optionsBytes))
+
 	pinataMetadata := Metadata{
 		Name: stats.Name(),
 	}
@@ -113,7 +123,10 @@ func Upload(filePath string) (ResponseData, error) {
 	_ = writer.WriteField("pinataMetadata", string(metadataBytes))
 	writer.Close()
 
+	totalSize = int64(body.Len())
+
 	progressBody := NewProgressReader(body, totalSize)
+
 	req, err := http.NewRequest("POST", "https://api.pinata.cloud/pinning/pinFileToIPFS", progressBody)
 	if err != nil {
 		log.Fatal("Failed to create the request", err)
@@ -126,6 +139,8 @@ func Upload(filePath string) (ResponseData, error) {
 	if err != nil {
 		log.Fatal("Failed to send the request", err)
 	}
+	progressBody.bar.Set(int(totalSize))
+	fmt.Println()
 	defer resp.Body.Close()
 
 	var response ResponseData
