@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/schollz/progressbar/v3"
 	"io"
 	"log"
 	"mime/multipart"
@@ -11,6 +12,25 @@ import (
 	"os"
 	"path/filepath"
 )
+
+type ProgressReader struct {
+	r   io.Reader
+	bar *progressbar.ProgressBar
+}
+
+func NewProgressReader(r io.Reader, size int64) *ProgressReader {
+	bar := progressbar.DefaultBytes(
+		size,
+		"uploading",
+	)
+	return &ProgressReader{r: r, bar: bar}
+}
+
+func (pr *ProgressReader) Read(p []byte) (n int, err error) {
+	n, err = pr.r.Read(p)
+	pr.bar.Add(n)
+	return
+}
 
 func Upload(filePath string) (ResponseData, error) {
 	homeDir, err := os.UserHomeDir()
@@ -56,7 +76,14 @@ func Upload(filePath string) (ResponseData, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
+	var totalSize int64 = 0
 	for _, f := range files {
+		fileStat, err := os.Stat(f)
+		if err != nil {
+			log.Fatal(err)
+		}
+		totalSize += fileStat.Size()
+
 		file, err := os.Open(f)
 		if err != nil {
 			log.Fatal(err)
@@ -86,7 +113,8 @@ func Upload(filePath string) (ResponseData, error) {
 	_ = writer.WriteField("pinataMetadata", string(metadataBytes))
 	writer.Close()
 
-	req, err := http.NewRequest("POST", "https://api.pinata.cloud/pinning/pinFileToIPFS", body)
+	progressBody := NewProgressReader(body, totalSize)
+	req, err := http.NewRequest("POST", "https://api.pinata.cloud/pinning/pinFileToIPFS", progressBody)
 	if err != nil {
 		log.Fatal("Failed to create the request", err)
 	}
