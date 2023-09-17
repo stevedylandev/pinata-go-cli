@@ -32,6 +32,29 @@ func (pr *ProgressReader) Read(p []byte) (n int, err error) {
 	return
 }
 
+func FormatSize(bytes int) string {
+	const (
+		KB = 1000
+		MB = KB * KB
+		GB = MB * KB
+	)
+
+	var formattedSize string
+
+	switch {
+	case bytes < KB:
+		formattedSize = fmt.Sprintf("%d bytes", bytes)
+	case bytes < MB:
+		formattedSize = fmt.Sprintf("%.2f KB", float64(bytes)/KB)
+	case bytes < GB:
+		formattedSize = fmt.Sprintf("%.2f MB", float64(bytes)/MB)
+	default:
+		formattedSize = fmt.Sprintf("%.2f GB", float64(bytes)/GB)
+	}
+
+	return formattedSize
+}
+
 func Upload(filePath string) (ResponseData, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -49,6 +72,7 @@ func Upload(filePath string) (ResponseData, error) {
 
 	stats, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
+		fmt.Println("File or folder does not exist")
 		return ResponseData{}, err
 	}
 
@@ -144,16 +168,19 @@ func Upload(filePath string) (ResponseData, error) {
 	defer resp.Body.Close()
 
 	var response ResponseData
+
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		return ResponseData{}, err
 	}
 
-	formattedJSON, err := json.MarshalIndent(response, "", "    ")
-	if err != nil {
-		log.Fatal("Failed to format JSON:", err)
+	fmt.Println("CID:", response.IpfsHash)
+	fmt.Println("Size:", FormatSize(response.PinSize))
+	fmt.Println("Date:", response.Timestamp)
+
+	if response.IsDuplicate {
+		fmt.Println("Already Pinned: true")
 	}
-	fmt.Println(string(formattedJSON))
 
 	return response, nil
 }

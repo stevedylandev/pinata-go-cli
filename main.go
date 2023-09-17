@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
@@ -17,12 +16,8 @@ type ResponseData struct {
 type Options struct {
 	CidVersion int `json:"cidVersion"`
 }
-type KeyValues struct {
-	WhimseyLevel int `json:"whimsey_level"`
-}
 type Metadata struct {
-	Name      string    `json:"name"`
-	Keyvalues KeyValues `json:"keyvalues"`
+	Name string `json:"name"`
 }
 
 func main() {
@@ -44,29 +39,6 @@ func main() {
 				Action: func(cCtx *cli.Context) error {
 					Upload(string(cCtx.Args().First()))
 					return nil
-				},
-			},
-			{
-				Name:    "template",
-				Aliases: []string{"t"},
-				Usage:   "options for task templates",
-				Subcommands: []*cli.Command{
-					{
-						Name:  "add",
-						Usage: "add a new template",
-						Action: func(cCtx *cli.Context) error {
-							fmt.Println("new task template: ", cCtx.Args().First())
-							return nil
-						},
-					},
-					{
-						Name:  "remove",
-						Usage: "remove an existing template",
-						Action: func(cCtx *cli.Context) error {
-							fmt.Println("removed task template: ", cCtx.Args().First())
-							return nil
-						},
-					},
 				},
 			},
 		},
