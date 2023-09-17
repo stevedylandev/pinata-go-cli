@@ -2,7 +2,7 @@
 
 # Define the name of the binary and the URL to download it from
 BINARY_NAME="pinata-go-cli"
-BINARY_URL="https://github.com/stevedylandev/pinata-go-cli"
+BINARY_URL="https://github.com/stevedylandev/pinata-go-cli/pinata-go-cli"
 
 # Define the installation directory (where you want to install the binary)
 INSTALL_DIR="/usr/local/bin"
