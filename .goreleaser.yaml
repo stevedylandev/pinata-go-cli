@@ -44,9 +44,9 @@ universal_binaries:
     # for example, to run generators.
     #
     # Templates: allowed
-    hooks:
-      pre: rice embed-go
-      post: ./script.sh {{ .Path }}
+    # hooks:
+    #   pre: rice embed-go
+    #   post: ./script.sh {{ .Path }}
 
 archives:
   - format: tar.gz
