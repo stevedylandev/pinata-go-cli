@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/schollz/progressbar/v3"
 	"io"
 	"log"
@@ -13,15 +14,27 @@ import (
 	"path/filepath"
 )
 
+var style = lipgloss.NewStyle().
+	Bold(true).
+	Foreground(lipgloss.Color("5"))
+
 type ProgressReader struct {
 	r   io.Reader
 	bar *progressbar.ProgressBar
 }
 
 func NewProgressReader(r io.Reader, size int64) *ProgressReader {
-	bar := progressbar.DefaultBytes(
+	bar := progressbar.NewOptions64(
 		size,
-		"uploading",
+		progressbar.OptionEnableColorCodes(true),
+		progressbar.OptionShowBytes(true),
+		progressbar.OptionSetDescription("[magenta]Uploading..."),
+		progressbar.OptionSetTheme(progressbar.Theme{
+			Saucer:        style.Render("█"),
+			SaucerPadding: " ",
+			BarStart:      style.Render("|"),
+			BarEnd:        style.Render("|"),
+		}),
 	)
 	return &ProgressReader{r: r, bar: bar}
 }
@@ -174,12 +187,12 @@ func Upload(filePath string) (ResponseData, error) {
 		return ResponseData{}, err
 	}
 
-	fmt.Println("CID:", response.IpfsHash)
-	fmt.Println("Size:", FormatSize(response.PinSize))
-	fmt.Println("Date:", response.Timestamp)
+	fmt.Println(style.Render("CID:", response.IpfsHash))
+	fmt.Println(style.Render("Size:", FormatSize(response.PinSize)))
+	fmt.Println(style.Render("Date:", response.Timestamp))
 
 	if response.IsDuplicate {
-		fmt.Println("Already Pinned: true")
+		fmt.Println(style.Render("Already Pinned: true"))
 	}
 
 	return response, nil
