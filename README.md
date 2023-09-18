@@ -19,7 +19,7 @@ git clone https://github.com/stevedylandev/pinata-go-cli && cd pinata-go-cli && 
 
 ## Usage
 
-With the CLI installed you will first need to authenticate it with your Pinata JWT
+With the CLI installed you will first need to authenticate it with your [Pinata JWT](https://docs.pinata.cloud/docs/api-keys)
 
 ```bash
 pinata-go-cli auth <your-jwt>
