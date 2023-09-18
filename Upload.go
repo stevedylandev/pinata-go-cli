@@ -3,50 +3,142 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/schollz/progressbar/v3"
 	"io"
 	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/schollz/progressbar/v3"
 )
 
-type ProgressReader struct {
+var style = lipgloss.NewStyle().
+	Bold(true).
+	Foreground(lipgloss.Color("5"))
+
+func Upload(filePath string) (ResponseData, error) {
+	jwt, err := findToken()
+	if err != nil {
+		return ResponseData{}, err
+	}
+
+	stats, err := os.Stat(filePath)
+	if os.IsNotExist(err) {
+		fmt.Println("File or folder does not exist")
+		return ResponseData{}, errors.Join(err, errors.New("file or folder does not exist"))
+	}
+
+	files, err := pathsFinder(filePath, stats)
+	if err != nil {
+		return ResponseData{}, err
+	}
+
+	body := &bytes.Buffer{}
+	contentType, err := createMultipartRequest(filePath, files, body, stats)
+	if err != nil {
+		return ResponseData{}, err
+	}
+
+	totalSize := int64(body.Len())
+
+	progressBody := newProgressReader(body, totalSize)
+
+	host := GetHost()
+	url := fmt.Sprintf("https://%s/pinning/pinFileToIPFS", host)
+	req, err := http.NewRequest("POST", url, progressBody)
+	if err != nil {
+		return ResponseData{}, errors.Join(err, errors.New("failed to create the request"))
+	}
+	req.Header.Set("Authorization", "Bearer "+string(jwt))
+	req.Header.Set("content-type", contentType)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return ResponseData{}, errors.Join(err, errors.New("failed to send the request"))
+	}
+	err = progressBody.bar.Set(int(totalSize))
+	if err != nil {
+		return ResponseData{}, err
+	}
+	fmt.Println()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			log.Fatal("could not close request body")
+		}
+	}(resp.Body)
+
+	var response ResponseData
+
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	if err != nil {
+		return ResponseData{}, err
+	}
+
+	fmt.Println(style.Render("CID:", response.IpfsHash))
+	fmt.Println(style.Render("Size:", formatSize(response.PinSize)))
+	fmt.Println(style.Render("Date:", response.Timestamp))
+
+	if response.IsDuplicate {
+		fmt.Println(style.Render("Already Pinned: true"))
+	}
+
+	return response, nil
+}
+
+func findToken() ([]byte, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+	dotFilePath := filepath.Join(homeDir, ".pinata-go-cli")
+	JWT, err := os.ReadFile(dotFilePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, errors.New("JWT not found. Please authorize first using the 'auth' command")
+		} else {
+			return nil, err
+		}
+	}
+	return JWT, err
+}
+
+type progressReader struct {
 	r   io.Reader
 	bar *progressbar.ProgressBar
 }
 
-func cmpl() {
-	fmt.Println()
-	fmt.Println(primaryStyle.Render("Upload complete, pinning..."))
-}
-
-func NewProgressReader(r io.Reader, size int64) *ProgressReader {
+func newProgressReader(r io.Reader, size int64) *progressReader {
 	bar := progressbar.NewOptions64(
 		size,
 		progressbar.OptionEnableColorCodes(true),
 		progressbar.OptionShowBytes(true),
-		progressbar.OptionSetDescription(primaryStyle.Render("Uploading...")),
+		progressbar.OptionSetDescription("[magenta]Uploading..."),
 		progressbar.OptionSetTheme(progressbar.Theme{
-			Saucer:        primaryStyle.Render("█"),
+			Saucer:        style.Render("█"),
 			SaucerPadding: " ",
-			BarStart:      primaryStyle.Render("|"),
-			BarEnd:        primaryStyle.Render("|"),
+			BarStart:      style.Render("|"),
+			BarEnd:        style.Render("|"),
 		}),
-		progressbar.OptionOnCompletion(cmpl),
 	)
-	return &ProgressReader{r: r, bar: bar}
+	return &progressReader{r: r, bar: bar}
 }
 
-func (pr *ProgressReader) Read(p []byte) (n int, err error) {
+func (pr *progressReader) Read(p []byte) (n int, err error) {
 	n, err = pr.r.Read(p)
-	pr.bar.Add(n)
+	err = pr.bar.Add(n)
+	if err != nil {
+		return 0, err
+	}
 	return
 }
 
-func FormatSize(bytes int) string {
+func formatSize(bytes int) string {
 	const (
 		KB = 1000
 		MB = KB * KB
@@ -69,64 +161,22 @@ func FormatSize(bytes int) string {
 	return formattedSize
 }
 
-func Upload(filePath string) (ResponseData, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatal(err)
-	}
-	dotFilePath := homeDir + "/.pinata-go-cli"
-	JWT, err := os.ReadFile(dotFilePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			log.Fatalf("JWT not found. Please authorize first using the 'auth' command.")
-		} else {
-			log.Fatal(err)
-		}
-	}
-
-	stats, err := os.Stat(filePath)
-	if os.IsNotExist(err) {
-		fmt.Println("File or folder does not exist")
-		return ResponseData{}, err
-	}
-
-	var files []string
-	fileIsASingleFile := !stats.IsDir()
-	if fileIsASingleFile {
-		files = append(files, filePath)
-	} else {
-		err = filepath.Walk(filePath,
-			func(path string, info os.FileInfo, err error) error {
-				if err != nil {
-					return err
-				}
-				if !info.IsDir() {
-					files = append(files, path)
-				}
-				return nil
-			})
-
-		if err != nil {
-			return ResponseData{}, err
-		}
-	}
-
-	body := &bytes.Buffer{}
+func createMultipartRequest(filePath string, files []string, body io.Writer, stats os.FileInfo) (string, error) {
+	contentType := ""
 	writer := multipart.NewWriter(body)
 
-	var totalSize int64 = 0
+	fileIsASingleFile := !stats.IsDir()
 	for _, f := range files {
-		fileStat, err := os.Stat(f)
-		if err != nil {
-			log.Fatal(err)
-		}
-		totalSize += fileStat.Size()
-
 		file, err := os.Open(f)
 		if err != nil {
-			log.Fatal(err)
+			return contentType, err
 		}
-		defer file.Close()
+		defer func(file *os.File) {
+			err := file.Close()
+			if err != nil {
+				log.Fatal("could not close file")
+			}
+		}(file)
 
 		var part io.Writer
 		if fileIsASingleFile {
@@ -136,9 +186,12 @@ func Upload(filePath string) (ResponseData, error) {
 			part, err = writer.CreateFormFile("file", filepath.Join(stats.Name(), relPath))
 		}
 		if err != nil {
-			log.Fatal(err)
+			return contentType, err
 		}
-		io.Copy(part, file)
+		_, err = io.Copy(part, file)
+		if err != nil {
+			return contentType, err
+		}
 	}
 
 	pinataOptions := Options{
@@ -147,55 +200,54 @@ func Upload(filePath string) (ResponseData, error) {
 
 	optionsBytes, err := json.Marshal(pinataOptions)
 	if err != nil {
-		return ResponseData{}, err
+		return contentType, err
 	}
-	_ = writer.WriteField("pinataOptions", string(optionsBytes))
+	err = writer.WriteField("pinataOptions", string(optionsBytes))
+
+	if err != nil {
+		return contentType, err
+	}
 
 	pinataMetadata := Metadata{
 		Name: stats.Name(),
 	}
 	metadataBytes, err := json.Marshal(pinataMetadata)
 	if err != nil {
-		return ResponseData{}, err
+		return contentType, err
 	}
 	_ = writer.WriteField("pinataMetadata", string(metadataBytes))
-	writer.Close()
-
-	totalSize = int64(body.Len())
-
-	progressBody := NewProgressReader(body, totalSize)
-
-	req, err := http.NewRequest("POST", "https://api.pinata.cloud/pinning/pinFileToIPFS", progressBody)
+	err = writer.Close()
 	if err != nil {
-		log.Fatal("Failed to create the request", err)
+		return contentType, err
 	}
-	req.Header.Set("Authorization", "Bearer "+string(JWT))
-	req.Header.Set("content-type", writer.FormDataContentType())
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	contentType = writer.FormDataContentType()
+
+	return contentType, nil
+}
+
+func pathsFinder(filePath string, stats os.FileInfo) ([]string, error) {
+	var err error
+	files := make([]string, 0)
+	fileIsASingleFile := !stats.IsDir()
+	if fileIsASingleFile {
+		files = append(files, filePath)
+		return files, err
+	}
+	err = filepath.Walk(filePath,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if !info.IsDir() {
+				files = append(files, path)
+			}
+			return nil
+		})
+
 	if err != nil {
-		log.Fatal("Failed to send the request", err)
-	}
-	progressBody.bar.Set(int(totalSize))
-	fmt.Println()
-	defer resp.Body.Close()
-
-	var response ResponseData
-
-	err = json.NewDecoder(resp.Body).Decode(&response)
-	if err != nil {
-		return ResponseData{}, err
+		return nil, err
 	}
 
-	fmt.Println(successStyle.Render("Success!"))
-	fmt.Println(primaryStyle.Render("CID:", response.IpfsHash))
-	fmt.Println(primaryStyle.Render("Size:", FormatSize(response.PinSize)))
-	fmt.Println(primaryStyle.Render("Date:", response.Timestamp))
-
-	if response.IsDuplicate {
-		fmt.Println(primaryStyle.Render("Already Pinned: true"))
-	}
-
-	return response, nil
+	return files, err
 }

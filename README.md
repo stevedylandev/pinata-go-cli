@@ -1,6 +1,6 @@
 # Pinata Go CLI
 
-Welcome to the Pinata Go CLI! This is a rewrite of our node.js cli but written in Go. This is still in active development so please let us know if you have any questions! :) 
+Welcome to the Pinata Go CLI! This is a rewrite of our node.js cli but written in Go. This is still in active development so please let us know if you have any questions! :)
 
 ## Installation
 
@@ -22,7 +22,11 @@ git clone https://github.com/stevedylandev/pinata-go-cli && cd pinata-go-cli && 
 With the CLI installed you will first need to authenticate it with your [Pinata JWT](https://docs.pinata.cloud/docs/api-keys)
 
 ```bash
+<<<<<<< HEAD
 pinata auth <your-jwt>
+=======
+`pinata-go-cli auth `<your-jwt>
+>>>>>>> ac85d30 (feat: refactoring the upload)
 ```
 
 After its been authenticated you can now upload using the `upload` command or `u` for short, then pass in the path to the file or folder you want to upload.
@@ -31,8 +35,8 @@ After its been authenticated you can now upload using the `upload` command or `u
 pinata upload ~/Pictures/somefolder/image.png
 ```
 
-## Contact 
+## Contact
 
-If you have any questions please feel free to reach out to us! 
+If you have any questions please feel free to reach out to us!
 
 [team@pinata.cloud](mailto:team@pinata.cloud)

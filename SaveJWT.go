@@ -1,10 +1,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 func SaveJWT(jwt string) error {
@@ -12,19 +14,23 @@ func SaveJWT(jwt string) error {
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(filepath.Join(home, ".pinata-go-cli"), []byte(jwt), 0600)
+	p := filepath.Join(home, ".pinata-go-cli")
+	err = os.WriteFile(p, []byte(jwt), 0600)
 	if err != nil {
 		return err
 	}
-
-	req, err := http.NewRequest("GET", "https://api.pinata.cloud/data/testAuthentication", nil)
+	host := GetHost()
+	url := fmt.Sprintf("https://%s/data/testAuthentication", host)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
 	}
 
 	req.Header.Set("Authorization", "Bearer "+jwt)
 
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: time.Duration(time.Second * 3),
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -32,11 +38,22 @@ func SaveJWT(jwt string) error {
 
 	defer resp.Body.Close()
 	status := resp.StatusCode
-	if status == 200 {
-		fmt.Println(successStyle.Render("Authentication Successful!"))
-	} else {
-		fmt.Println(failureStyle.Render("Authentication failed, make sure you are using the Pinata JWT"))
+	if status != 200 {
+		return errors.New(style.Render("Authentication failed, make sure you are using the Pinata JWT"))
 	}
 
+	fmt.Println(style.Render("Authentication Successful!"))
 	return nil
+}
+
+func GetHost() string {
+	return GetEnv("PINATA_HOST", "api.pinata.cloud")
+}
+
+func GetEnv(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if len(value) == 0 {
+		return defaultValue
+	}
+	return value
 }

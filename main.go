@@ -2,10 +2,11 @@ package main
 
 import (
 	"errors"
-	"github.com/charmbracelet/lipgloss"
-	"github.com/urfave/cli/v2"
 	"log"
 	"os"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/urfave/cli/v2"
 )
 
 var primaryStyle = lipgloss.NewStyle().
@@ -41,10 +42,10 @@ func main() {
 				Name:    "auth",
 				Aliases: []string{"a"},
 				Usage:   "Authorize the CLI with your Pinata JWT",
-				Action: func(cCtx *cli.Context) error {
-					jwt := cCtx.Args().First()
+				Action: func(ctx *cli.Context) error {
+					jwt := ctx.Args().First()
 					if jwt == "" {
-						return errors.New("No JWT provided")
+						return errors.New("no jwt supplied")
 					}
 					err := SaveJWT(jwt)
 					return err
@@ -54,10 +55,10 @@ func main() {
 				Name:    "upload",
 				Aliases: []string{"u"},
 				Usage:   "Upload a file or folder to Pinata",
-				Action: func(cCtx *cli.Context) error {
-					filePath := cCtx.Args().First()
+				Action: func(ctx *cli.Context) error {
+					filePath := ctx.Args().First()
 					if filePath == "" {
-						return errors.New("No file or folder path provided")
+						return errors.New("no filePath supplied")
 					}
 					_, err := Upload(filePath)
 					return err
