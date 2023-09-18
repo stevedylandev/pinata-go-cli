@@ -33,9 +33,9 @@ func SaveJWT(jwt string) error {
 	defer resp.Body.Close()
 	status := resp.StatusCode
 	if status == 200 {
-		fmt.Println("Authentication Successful!")
+		fmt.Println(style.Render("Authentication Successful!"))
 	} else {
-		fmt.Println("Authentication failed, make sure you are using the Pinata JWT")
+		fmt.Println(style.Render("Authentication failed, make sure you are using the Pinata JWT"))
 	}
 
 	return nil
