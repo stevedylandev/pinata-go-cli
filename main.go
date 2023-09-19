@@ -1,10 +1,23 @@
 package main
 
 import (
+	"github.com/charmbracelet/lipgloss"
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
 )
+
+var primaryStyle = lipgloss.NewStyle().
+	Bold(true).
+	Foreground(lipgloss.CompleteColor{TrueColor: "#8A79FF", ANSI256: "99", ANSI: "99"})
+
+var successStyle = lipgloss.NewStyle().
+	Bold(true).
+	Foreground(lipgloss.CompleteColor{TrueColor: "#00CC92", ANSI256: "42", ANSI: "42"})
+
+var failureStyle = lipgloss.NewStyle().
+	Bold(true).
+	Foreground(lipgloss.CompleteColor{TrueColor: "#F04438", ANSI256: "166", ANSI: "166"})
 
 type ResponseData struct {
 	IpfsHash    string `json:"IpfsHash"`
