@@ -44,6 +44,7 @@ func Upload(filePath string) (ResponseData, error) {
 	}
 
 	totalSize := int64(body.Len())
+	fmt.Printf("Uploading %s (%s)\n", primaryStyle.Render(stats.Name()), formatSize(int(totalSize)))
 
 	progressBody := newProgressReader(body, totalSize)
 
@@ -60,6 +61,9 @@ func Upload(filePath string) (ResponseData, error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		return ResponseData{}, errors.Join(err, errors.New("failed to send the request"))
+	}
+	if resp.StatusCode != 200 {
+		return ResponseData{}, fmt.Errorf("server Returned an error %d", resp.StatusCode)
 	}
 	err = progressBody.bar.Set(int(totalSize))
 	if err != nil {
@@ -80,12 +84,13 @@ func Upload(filePath string) (ResponseData, error) {
 		return ResponseData{}, err
 	}
 
-	fmt.Println(style.Render("CID:", response.IpfsHash))
-	fmt.Println(style.Render("Size:", formatSize(response.PinSize)))
-	fmt.Println(style.Render("Date:", response.Timestamp))
+	fmt.Println(successStyle.Render("Success!"))
+	fmt.Println(primaryStyle.Render("CID:", response.IpfsHash))
+	fmt.Println(primaryStyle.Render("Size:", formatSize(response.PinSize)))
+	fmt.Println(primaryStyle.Render("Date:", response.Timestamp))
 
 	if response.IsDuplicate {
-		fmt.Println(style.Render("Already Pinned: true"))
+		fmt.Println(primaryStyle.Render("Already Pinned: true"))
 	}
 
 	return response, nil
@@ -113,24 +118,33 @@ type progressReader struct {
 	bar *progressbar.ProgressBar
 }
 
+func cmpl() {
+	fmt.Println()
+	fmt.Println(primaryStyle.Render("Upload complete, pinning..."))
+}
+
 func newProgressReader(r io.Reader, size int64) *progressReader {
 	bar := progressbar.NewOptions64(
 		size,
 		progressbar.OptionEnableColorCodes(true),
 		progressbar.OptionShowBytes(true),
-		progressbar.OptionSetDescription("[magenta]Uploading..."),
+		progressbar.OptionSetDescription(primaryStyle.Render("Uploading...")),
 		progressbar.OptionSetTheme(progressbar.Theme{
 			Saucer:        style.Render("█"),
 			SaucerPadding: " ",
 			BarStart:      style.Render("|"),
 			BarEnd:        style.Render("|"),
 		}),
+		progressbar.OptionOnCompletion(cmpl),
 	)
 	return &progressReader{r: r, bar: bar}
 }
 
 func (pr *progressReader) Read(p []byte) (n int, err error) {
 	n, err = pr.r.Read(p)
+	if err != nil {
+		return 0, err
+	}
 	err = pr.bar.Add(n)
 	if err != nil {
 		return 0, err

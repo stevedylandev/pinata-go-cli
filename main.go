@@ -58,7 +58,7 @@ func main() {
 				Action: func(ctx *cli.Context) error {
 					filePath := ctx.Args().First()
 					if filePath == "" {
-						return errors.New("no filePath supplied")
+						return errors.New("no file path supplied")
 					}
 					_, err := Upload(filePath)
 					return err

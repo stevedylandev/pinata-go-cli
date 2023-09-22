@@ -22,11 +22,7 @@ git clone https://github.com/stevedylandev/pinata-go-cli && cd pinata-go-cli && 
 With the CLI installed you will first need to authenticate it with your [Pinata JWT](https://docs.pinata.cloud/docs/api-keys)
 
 ```bash
-<<<<<<< HEAD
 pinata auth <your-jwt>
-=======
-`pinata-go-cli auth `<your-jwt>
->>>>>>> ac85d30 (feat: refactoring the upload)
 ```
 
 After its been authenticated you can now upload using the `upload` command or `u` for short, then pass in the path to the file or folder you want to upload.
