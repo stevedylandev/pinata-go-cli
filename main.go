@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/urfave/cli/v2"
 	"log"
@@ -41,8 +42,12 @@ func main() {
 				Aliases: []string{"a"},
 				Usage:   "Authorize the CLI with your Pinata JWT",
 				Action: func(cCtx *cli.Context) error {
-					SaveJWT(string(cCtx.Args().First()))
-					return nil
+					jwt := cCtx.Args().First()
+					if jwt == "" {
+						return errors.New("No JWT provided")
+					}
+					err := SaveJWT(jwt)
+					return err
 				},
 			},
 			{
@@ -50,8 +55,12 @@ func main() {
 				Aliases: []string{"u"},
 				Usage:   "Upload a file or folder to Pinata",
 				Action: func(cCtx *cli.Context) error {
-					Upload(string(cCtx.Args().First()))
-					return nil
+					filePath := cCtx.Args().First()
+					if filePath == "" {
+						return errors.New("No file or folder path provided")
+					}
+					_, err := Upload(filePath)
+					return err
 				},
 			},
 		},
