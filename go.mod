@@ -1,4 +1,4 @@
-module pinata-go-cli
+module pinata
 
 go 1.21.1
 
