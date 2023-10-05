@@ -14,7 +14,7 @@ go version
 Then paste and run the following into your terminal:
 
 ```bash
-git clone https://github.com/stevedylandev/pinata-go-cli && cd pinata-go-cli/pinata && go install .
+git clone https://github.com/stevedylandev/pinata-go-cli && cd pinata-go-cli && go install .
 ```
 
 ## Usage
