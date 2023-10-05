@@ -14,7 +14,7 @@ go version
 Then paste and run the following into your terminal:
 
 ```bash
-git clone https://github.com/stevedylandev/pinata-go-cli && cd pinata-go-cli && go install .
+git clone https://github.com/stevedylandev/pinata-go-cli && cd pinata-go-cli && go install -0 pinata
 ```
 
 ## Usage
@@ -22,13 +22,13 @@ git clone https://github.com/stevedylandev/pinata-go-cli && cd pinata-go-cli && 
 With the CLI installed you will first need to authenticate it with your [Pinata JWT](https://docs.pinata.cloud/docs/api-keys)
 
 ```bash
-pinata-go-cli auth <your-jwt>
+pinata auth <your-jwt>
 ```
 
 After its been authenticated you can now upload using the `upload` command or `u` for short, then pass in the path to the file or folder you want to upload.
 
 ```bash
-pinata-go-cli upload ~/Pictures/somefolder/image.png
+pinata upload ~/Pictures/somefolder/image.png
 ```
 
 ## Contact 
