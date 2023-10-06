@@ -37,6 +37,8 @@ type Metadata struct {
 
 func main() {
 	app := &cli.App{
+		Name:  "pinata",
+		Usage: "A CLI for uploading files to Pinata",
 		Commands: []*cli.Command{
 			{
 				Name:    "auth",
