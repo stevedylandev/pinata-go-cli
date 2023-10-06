@@ -38,7 +38,7 @@ type Metadata struct {
 func main() {
 	app := &cli.App{
 		Name:  "pinata",
-		Usage: "A CLI for uploading files to Pinata",
+		Usage: "A CLI for uploading files to Pinata! To get started make an API key at https://app.pinata.cloud/keys, then authorize the CLI with the auth command with your JWT",
 		Commands: []*cli.Command{
 			{
 				Name:    "auth",
