@@ -1,6 +1,6 @@
 module pinata
 
-go 1.21.1
+go 1.21
 
 require (
 	github.com/charmbracelet/lipgloss v0.8.0

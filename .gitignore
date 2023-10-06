@@ -1,3 +1,5 @@
-
 dist/
 pinata-go-cli
+pinata
+.idea
+.vscode
