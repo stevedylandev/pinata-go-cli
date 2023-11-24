@@ -44,7 +44,7 @@ func Upload(filePath string) (ResponseData, error) {
 	}
 
 	totalSize := int64(body.Len())
-	fmt.Printf("Uploading %s (%s)\n", primaryStyle.Render(stats.Name()), formatSize(int(totalSize)))
+	fmt.Printf("Uploading %s (%s)\n", stats.Name(), formatSize(int(totalSize)))
 
 	progressBody := newProgressReader(body, totalSize)
 
@@ -84,13 +84,13 @@ func Upload(filePath string) (ResponseData, error) {
 		return ResponseData{}, err
 	}
 
-	fmt.Println(successStyle.Render("Success!"))
-	fmt.Println(primaryStyle.Render("CID:", response.IpfsHash))
-	fmt.Println(primaryStyle.Render("Size:", formatSize(response.PinSize)))
-	fmt.Println(primaryStyle.Render("Date:", response.Timestamp))
+	fmt.Println("Success!")
+	fmt.Println("CID:", response.IpfsHash)
+	fmt.Println("Size:", formatSize(response.PinSize))
+	fmt.Println("Date:", response.Timestamp)
 
 	if response.IsDuplicate {
-		fmt.Println(primaryStyle.Render("Already Pinned: true"))
+		fmt.Println("Already Pinned: true")
 	}
 
 	return response, nil
@@ -120,7 +120,7 @@ type progressReader struct {
 
 func cmpl() {
 	fmt.Println()
-	fmt.Println(primaryStyle.Render("Upload complete, pinning..."))
+	fmt.Println("Upload complete, pinning...")
 }
 
 func newProgressReader(r io.Reader, size int64) *progressReader {
@@ -128,12 +128,12 @@ func newProgressReader(r io.Reader, size int64) *progressReader {
 		size,
 		progressbar.OptionEnableColorCodes(true),
 		progressbar.OptionShowBytes(true),
-		progressbar.OptionSetDescription(primaryStyle.Render("Uploading...")),
+		progressbar.OptionSetDescription("Uploading..."),
 		progressbar.OptionSetTheme(progressbar.Theme{
-			Saucer:        style.Render("█"),
+			Saucer:        "█",
 			SaucerPadding: " ",
-			BarStart:      style.Render("|"),
-			BarEnd:        style.Render("|"),
+			BarStart:      "|",
+			BarEnd:        "|",
 		}),
 		progressbar.OptionOnCompletion(cmpl),
 	)
