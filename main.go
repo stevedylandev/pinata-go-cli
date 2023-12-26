@@ -30,6 +30,7 @@ func main() {
 				Name:    "auth",
 				Aliases: []string{"a"},
 				Usage:   "Authorize the CLI with your Pinata JWT",
+        ArgsUsage: "[your Pinata JWT]",
 				Action: func(ctx *cli.Context) error {
 					jwt := ctx.Args().First()
 					if jwt == "" {
@@ -43,6 +44,7 @@ func main() {
 				Name:    "upload",
 				Aliases: []string{"u"},
 				Usage:   "Upload a file or folder to Pinata",
+        ArgsUsage: "[path to file]",
 				Action: func(ctx *cli.Context) error {
 					filePath := ctx.Args().First()
 					if filePath == "" {

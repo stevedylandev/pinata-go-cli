@@ -11,14 +11,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-
-	"github.com/charmbracelet/lipgloss"
 	"github.com/schollz/progressbar/v3"
 )
-
-var style = lipgloss.NewStyle().
-	Bold(true).
-	Foreground(lipgloss.Color("5"))
 
 func Upload(filePath string) (ResponseData, error) {
 	jwt, err := findToken()
