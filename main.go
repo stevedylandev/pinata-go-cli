@@ -19,14 +19,8 @@ type Options struct {
 }
 
 type Metadata struct {
-	Name      string            `json:"name"`
-	KeyValues map[string]string `json:"keyvalues"`
-}
-
-type Region struct {
-	RegionID                string `json:"regionId"`
-	CurrentReplicationCount int    `json:"currentReplicationCount"`
-	DesiredReplicationCount int    `json:"desiredReplicationCount"`
+	Name      string                 `json:"name"`
+	KeyValues map[string]interface{} `json:"keyvalues"`
 }
 
 type Pin struct {
@@ -37,7 +31,6 @@ type Pin struct {
 	DatePinned    string   `json:"date_pinned"`
 	DateUnpinned  *string  `json:"date_unpinned"`
 	Metadata      Metadata `json:"metadata"`
-	Regions       []Region `json:"regions"`
 	MimeType      string   `json:"mime_type"`
 	NumberOfFiles int      `json:"number_of_files"`
 }
@@ -80,16 +73,77 @@ func main() {
 				},
 			},
 			{
+				Name:      "pin",
+				Aliases:   []string{"p"},
+				Usage:     "Pin an existing CID on IPFS to Pinata",
+				ArgsUsage: "[CID of file on IPFS]",
+				Action: func(ctx *cli.Context) error {
+					filePath := ctx.Args().First()
+					if filePath == "" {
+						return errors.New("no file path supplied")
+					}
+					_, err := Upload(filePath)
+					return err
+				},
+			},
+			{
+				Name:      "delete",
+				Aliases:   []string{"d"},
+				Usage:     "Delete a file by CID",
+				ArgsUsage: "[CID of file]",
+				Action: func(ctx *cli.Context) error {
+					cid := ctx.Args().First()
+					if cid == "" {
+						return errors.New("no CID provided")
+					}
+					err := Delete(cid)
+					return err
+				},
+			},
+			{
 				Name:      "list",
 				Aliases:   []string{"l"},
 				Usage:     "List most recent files",
-				ArgsUsage: "[number of files to return, max 1000]",
+				ArgsUsage: "[List your most recent files]",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "cid",
+						Aliases: []string{"c"},
+						Value:   "null",
+						Usage:   "Search files by CID",
+					},
+					&cli.StringFlag{
+						Name:    "amount",
+						Aliases: []string{"a"},
+						Value:   "10",
+						Usage:   "The number of files you would like to return, default 10 max 1000",
+					},
+					&cli.StringFlag{
+						Name:    "name",
+						Aliases: []string{"n"},
+						Value:   "null",
+						Usage:   "The name of the file",
+					},
+					&cli.StringFlag{
+						Name:    "status",
+						Aliases: []string{"s"},
+						Value:   "pinned",
+						Usage:   "Status of the file. Options are 'pinned', 'unpinned', or 'all'. Default: 'pinned'",
+					},
+					&cli.StringFlag{
+						Name:    "pageOffset",
+						Aliases: []string{"p"},
+						Value:   "null",
+						Usage:   "Allows you to paginate through files. If your file amount is 10, then you could set the pageOffset to '10' to see the next 10 files.",
+					},
+				},
 				Action: func(ctx *cli.Context) error {
-					queryParam := ctx.Args().First()
-					if queryParam == "" {
-						queryParam = "10" // Replace with your actual default value
-					}
-					_, err := ListFiles(queryParam)
+					cid := ctx.String("cid")
+					amount := ctx.String("amount")
+					name := ctx.String("name")
+					status := ctx.String("status")
+					offset := ctx.String("pageOffset")
+					_, err := ListFiles(amount, cid, name, status, offset)
 					return err
 				},
 			},
