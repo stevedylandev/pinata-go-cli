@@ -29,7 +29,7 @@ func Delete(cid string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("server Returned an error %d", resp.StatusCode)
+		return fmt.Errorf("server Returned an error %d, check CID", resp.StatusCode)
 	}
 
 	fmt.Println("File Deleted")

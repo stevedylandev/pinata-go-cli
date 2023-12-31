@@ -18,6 +18,7 @@ type PinByCIDResponse struct {
 	Id     string `json:"id"`
 	CID    string `json:"ipfsHash"`
 	Status string `json:"status"`
+	Name   string `json:"name"`
 }
 
 type Options struct {
@@ -30,10 +31,10 @@ type Metadata struct {
 }
 
 type Pin struct {
-	ID            string   `json:"id"`
+	Id            string   `json:"id"`
 	IPFSPinHash   string   `json:"ipfs_pin_hash"`
 	Size          int      `json:"size"`
-	UserID        string   `json:"user_id"`
+	UserId        string   `json:"user_id"`
 	DatePinned    string   `json:"date_pinned"`
 	DateUnpinned  *string  `json:"date_unpinned"`
 	Metadata      Metadata `json:"metadata"`
@@ -43,6 +44,18 @@ type Pin struct {
 
 type ListResponse struct {
 	Rows []Pin `json:"rows"`
+}
+
+type Request struct {
+	Id        string `json:"id"`
+	CID       string `json:"ipfs_pin_hash"`
+	StartDate string `json:"date_queued"`
+	Name      string `json:"name"`
+	Status    string `json:"status"`
+}
+
+type RequestsResponse struct {
+	Rows []Request `json:"rows"`
 }
 
 func main() {
@@ -83,12 +96,53 @@ func main() {
 				Aliases:   []string{"p"},
 				Usage:     "Pin an existing CID on IPFS to Pinata",
 				ArgsUsage: "[CID of file on IPFS]",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "name",
+						Aliases: []string{"n"},
+						Value:   "null",
+						Usage:   "Add a name for the file you are trying to pin.",
+					},
+				},
 				Action: func(ctx *cli.Context) error {
 					cid := ctx.Args().First()
+					name := ctx.String("name")
 					if cid == "" {
 						return errors.New("no cid provided")
 					}
-					_, err := PinByCID(cid)
+					_, err := PinByCID(cid, name)
+					return err
+				},
+			},
+			{
+				Name:    "requests",
+				Aliases: []string{"r"},
+				Usage:   "List pin by CID requests.",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "cid",
+						Aliases: []string{"c"},
+						Value:   "null",
+						Usage:   "Search pin by CID requests by CID",
+					},
+					&cli.StringFlag{
+						Name:    "status",
+						Aliases: []string{"s"},
+						Value:   "null",
+						Usage:   "Search by status for pin by CID requests. See https://docs.pinata.cloud/reference/get_pinning-pinjobs for more info.",
+					},
+					&cli.StringFlag{
+						Name:    "pageOffset",
+						Aliases: []string{"p"},
+						Value:   "null",
+						Usage:   "Allows you to paginate through requests by number of requests.",
+					},
+				},
+				Action: func(ctx *cli.Context) error {
+					cid := ctx.String("cid")
+					status := ctx.String("status")
+					offset := ctx.String("pageOffset")
+					_, err := Requests(cid, status, offset)
 					return err
 				},
 			},
@@ -107,10 +161,9 @@ func main() {
 				},
 			},
 			{
-				Name:      "list",
-				Aliases:   []string{"l"},
-				Usage:     "List most recent files",
-				ArgsUsage: "[List your most recent files]",
+				Name:    "list",
+				Aliases: []string{"l"},
+				Usage:   "List most recent files",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "cid",

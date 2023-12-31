@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func PinByCID(cid string) (PinByCIDResponse, error) {
+func PinByCID(cid string, name string) (PinByCIDResponse, error) {
 	jwt, err := findToken()
 	if err != nil {
 		return PinByCIDResponse{}, err
@@ -17,7 +17,12 @@ func PinByCID(cid string) (PinByCIDResponse, error) {
 	url := fmt.Sprintf("https://%s/pinning/pinByHash", host)
 
 	// Create the request body
-	requestBody := map[string]string{"hashToPin": cid}
+	requestBody := map[string]interface{}{
+		"hashToPin": cid,
+		"pinataMetadata": map[string]string{
+			"name": name,
+		},
+	}
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
 		return PinByCIDResponse{}, errors.New("failed to create JSON body")
@@ -52,6 +57,7 @@ func PinByCID(cid string) (PinByCIDResponse, error) {
 	fmt.Println("Request ID:", response.Id)
 	fmt.Println("CID:", response.CID)
 	fmt.Println("Status:", response.Status)
+	fmt.Println("Name:", response.Name)
 
 	return response, nil
 }
