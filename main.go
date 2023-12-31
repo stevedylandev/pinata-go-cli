@@ -7,11 +7,17 @@ import (
 	"os"
 )
 
-type ResponseData struct {
+type UploadResponse struct {
 	IpfsHash    string `json:"IpfsHash"`
 	PinSize     int    `json:"PinSize"`
 	Timestamp   string `json:"Timestamp"`
 	IsDuplicate bool   `json:"isDuplicate"`
+}
+
+type PinByCIDResponse struct {
+	Id     string `json:"id"`
+	CID    string `json:"ipfsHash"`
+	Status string `json:"status"`
 }
 
 type Options struct {
@@ -66,7 +72,7 @@ func main() {
 				Action: func(ctx *cli.Context) error {
 					filePath := ctx.Args().First()
 					if filePath == "" {
-						return errors.New("no file path supplied")
+						return errors.New("no file path provided")
 					}
 					_, err := Upload(filePath)
 					return err
@@ -78,11 +84,11 @@ func main() {
 				Usage:     "Pin an existing CID on IPFS to Pinata",
 				ArgsUsage: "[CID of file on IPFS]",
 				Action: func(ctx *cli.Context) error {
-					filePath := ctx.Args().First()
-					if filePath == "" {
-						return errors.New("no file path supplied")
+					cid := ctx.Args().First()
+					if cid == "" {
+						return errors.New("no cid provided")
 					}
-					_, err := Upload(filePath)
+					_, err := PinByCID(cid)
 					return err
 				},
 			},

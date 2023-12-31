@@ -5,36 +5,36 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/schollz/progressbar/v3"
 	"io"
 	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
-	"github.com/schollz/progressbar/v3"
 )
 
-func Upload(filePath string) (ResponseData, error) {
+func Upload(filePath string) (UploadResponse, error) {
 	jwt, err := findToken()
 	if err != nil {
-		return ResponseData{}, err
+		return UploadResponse{}, err
 	}
 
 	stats, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
 		fmt.Println("File or folder does not exist")
-		return ResponseData{}, errors.Join(err, errors.New("file or folder does not exist"))
+		return UploadResponse{}, errors.Join(err, errors.New("file or folder does not exist"))
 	}
 
 	files, err := pathsFinder(filePath, stats)
 	if err != nil {
-		return ResponseData{}, err
+		return UploadResponse{}, err
 	}
 
 	body := &bytes.Buffer{}
 	contentType, err := createMultipartRequest(filePath, files, body, stats)
 	if err != nil {
-		return ResponseData{}, err
+		return UploadResponse{}, err
 	}
 
 	totalSize := int64(body.Len())
@@ -46,7 +46,7 @@ func Upload(filePath string) (ResponseData, error) {
 	url := fmt.Sprintf("https://%s/pinning/pinFileToIPFS", host)
 	req, err := http.NewRequest("POST", url, progressBody)
 	if err != nil {
-		return ResponseData{}, errors.Join(err, errors.New("failed to create the request"))
+		return UploadResponse{}, errors.Join(err, errors.New("failed to create the request"))
 	}
 	req.Header.Set("Authorization", "Bearer "+string(jwt))
 	req.Header.Set("content-type", contentType)
@@ -54,14 +54,14 @@ func Upload(filePath string) (ResponseData, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return ResponseData{}, errors.Join(err, errors.New("failed to send the request"))
+		return UploadResponse{}, errors.Join(err, errors.New("failed to send the request"))
 	}
 	if resp.StatusCode != 200 {
-		return ResponseData{}, fmt.Errorf("server Returned an error %d", resp.StatusCode)
+		return UploadResponse{}, fmt.Errorf("server Returned an error %d", resp.StatusCode)
 	}
 	err = progressBody.bar.Set(int(totalSize))
 	if err != nil {
-		return ResponseData{}, err
+		return UploadResponse{}, err
 	}
 	fmt.Println()
 	defer func(Body io.ReadCloser) {
@@ -71,11 +71,11 @@ func Upload(filePath string) (ResponseData, error) {
 		}
 	}(resp.Body)
 
-	var response ResponseData
+	var response UploadResponse
 
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
-		return ResponseData{}, err
+		return UploadResponse{}, err
 	}
 
 	fmt.Println("Success!")
