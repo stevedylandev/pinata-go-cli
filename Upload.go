@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 )
 
-func Upload(filePath string) (UploadResponse, error) {
+func Upload(filePath string, version int, name string) (UploadResponse, error) {
 	jwt, err := findToken()
 	if err != nil {
 		return UploadResponse{}, err
@@ -32,7 +32,7 @@ func Upload(filePath string) (UploadResponse, error) {
 	}
 
 	body := &bytes.Buffer{}
-	contentType, err := createMultipartRequest(filePath, files, body, stats)
+	contentType, err := createMultipartRequest(filePath, files, body, stats, version, name)
 	if err != nil {
 		return UploadResponse{}, err
 	}
@@ -169,7 +169,7 @@ func formatSize(bytes int) string {
 	return formattedSize
 }
 
-func createMultipartRequest(filePath string, files []string, body io.Writer, stats os.FileInfo) (string, error) {
+func createMultipartRequest(filePath string, files []string, body io.Writer, stats os.FileInfo, version int, name string) (string, error) {
 	contentType := ""
 	writer := multipart.NewWriter(body)
 
@@ -203,7 +203,7 @@ func createMultipartRequest(filePath string, files []string, body io.Writer, sta
 	}
 
 	pinataOptions := Options{
-		CidVersion: 1,
+		CidVersion: version,
 	}
 
 	optionsBytes, err := json.Marshal(pinataOptions)
@@ -217,7 +217,12 @@ func createMultipartRequest(filePath string, files []string, body io.Writer, sta
 	}
 
 	pinataMetadata := Metadata{
-		Name: stats.Name(),
+		Name: func() string {
+			if name != "nil" {
+				return name
+			}
+			return stats.Name()
+		}(),
 	}
 	metadataBytes, err := json.Marshal(pinataMetadata)
 	if err != nil {

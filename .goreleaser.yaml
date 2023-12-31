@@ -19,7 +19,7 @@ builds:
       - darwin
 universal_binaries:
   - id: pinata
-    
+
   - ids:
       - build1
       - build2
@@ -64,13 +64,13 @@ archives:
       {{- if .Arm }}v{{ .Arm }}{{ end }}
     # use zip for windows archives
     format_overrides:
-    - goos: windows
-      format: zip
-    # files: 
+      - goos: windows
+        format: zip
+    # files:
     #- install.sh
 # checksum:
 #   name_template: 'checksums.txt'
-# 
+#
 # signs:
 #   - artifacts: checksum
 
@@ -80,9 +80,8 @@ changelog:
   sort: asc
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
-
+      - "^docs:"
+      - "^test:"
 # The lines beneath this are called `modelines`. See `:help modeline`
 # Feel free to remove those if you don't want/use them.
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json

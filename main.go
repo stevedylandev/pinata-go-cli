@@ -82,12 +82,28 @@ func main() {
 				Aliases:   []string{"u"},
 				Usage:     "Upload a file or folder to Pinata",
 				ArgsUsage: "[path to file]",
+				Flags: []cli.Flag{
+					&cli.IntFlag{
+						Name:    "version",
+						Aliases: []string{"v"},
+						Value:   1,
+						Usage:   "Set desired CID version to either 0 or 1. Default is 1.",
+					},
+					&cli.StringFlag{
+						Name:    "name",
+						Aliases: []string{"n"},
+						Value:   "nil",
+						Usage:   "Add a name for the file you are uploading. By default it will use the filename on your system.",
+					},
+				},
 				Action: func(ctx *cli.Context) error {
 					filePath := ctx.Args().First()
+					version := ctx.Int("version")
+					name := ctx.String("name")
 					if filePath == "" {
 						return errors.New("no file path provided")
 					}
-					_, err := Upload(filePath)
+					_, err := Upload(filePath, version, name)
 					return err
 				},
 			},
