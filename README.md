@@ -4,6 +4,8 @@ Welcome to the Pinata Go CLI! This is still in active development so please let 
 
 ## Installation
 
+> Note - If you are on Windows please use WSL when installing, as the current implementation will not work natively on Windows OS. 
+
 We are currently working on the build flow for binaries to make installation easier, but for now we recommend building from source.
 
 To do this make sure you have [Go](https://go.dev/) installed on your computer and the following command returns a version:
