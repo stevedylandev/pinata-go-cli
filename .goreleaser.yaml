@@ -82,7 +82,9 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
-    files: "install.sh"
+    files: 
+      - install.sh
+      - README.md
 
 snapshot:
   name_template: "{{ incpatch .Version }}-next"
