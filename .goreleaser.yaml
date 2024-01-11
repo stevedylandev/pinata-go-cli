@@ -7,16 +7,32 @@ before:
     # you may remove this if you don't need go generate
     - go generate ./...
 builds:
-  - id: "pinata"
 
-    binary: pinata
+  - binary: pinata
+
+    id: pinata
 
     env:
       - CGO_ENABLED=0
     goos:
       - linux
       - windows
+    goarch:
+      - amd64
+
+  - binary: pinata
+
+    id: pinata-macos
+
+    goos:
       - darwin
+
+    goarch:
+      - amd64
+
+    hooks:
+      post: gon gon.hcl
+
 universal_binaries:
   - id: pinata
 
@@ -66,13 +82,7 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
-    # files:
-    #- install.sh
-# checksum:
-#   name_template: 'checksums.txt'
-#
-# signs:
-#   - artifacts: checksum
+    # files: "install.sh"
 
 snapshot:
   name_template: "{{ incpatch .Version }}-next"
