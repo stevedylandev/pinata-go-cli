@@ -59,6 +59,7 @@ type RequestsResponse struct {
 }
 
 func main() {
+  exeName := "pinata"
 	app := &cli.App{
 		Name:  "pinata",
 		Usage: "A CLI for uploading files to Pinata! To get started make an API key at https://app.pinata.cloud/keys, then authorize the CLI with the auth command with your JWT",
