@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 )
 
-func Upload(filePath string, version int, name string) (UploadResponse, error) {
+func Upload(filePath string, version int, name string, cidOnly bool) (UploadResponse, error) {
 	jwt, err := findToken()
 	if err != nil {
 		return UploadResponse{}, err
@@ -72,21 +72,21 @@ func Upload(filePath string, version int, name string) (UploadResponse, error) {
 	}(resp.Body)
 
 	var response UploadResponse
-
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		return UploadResponse{}, err
 	}
-
-	fmt.Println("Success!")
-	fmt.Println("CID:", response.IpfsHash)
-	fmt.Println("Size:", formatSize(response.PinSize))
-	fmt.Println("Date:", response.Timestamp)
-
-	if response.IsDuplicate {
-		fmt.Println("Already Pinned: true")
+	if cidOnly {
+		fmt.Println(response.IpfsHash)
+	} else {
+		fmt.Println("Success!")
+		fmt.Println("CID:", response.IpfsHash)
+		fmt.Println("Size:", formatSize(response.PinSize))
+		fmt.Println("Date:", response.Timestamp)
+		if response.IsDuplicate {
+			fmt.Println("Already Pinned: true")
+		}
 	}
-
 	return response, nil
 }
 
